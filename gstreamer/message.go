@@ -32,6 +32,17 @@ func (m *Message) ParseError() error {
 	return err
 }
 
+// SourceElement returns the element that generated the message, or panics
+// if the message type is not ElementMessage.
+func (m *Message) SourceElement() *Element {
+	if m.ty != ElementMessage {
+		panic(fmt.Sprintf("SourceElement called on %s message", m.ty))
+	}
+	src := newElement((*C.struct__GstElement)(unsafe.Pointer(m.raw.src)))
+	src.ref() // so the element will outlive the message
+	return src
+}
+
 // Content returns the dynamic structure of the message as a map, along
 // with the GStreamer type name for that structure.
 //
@@ -54,8 +65,8 @@ func (m *Message) Content() (string, map[string]interface{}) {
 
 		switch fieldType {
 		case C.G_TYPE_BOOLEAN:
-			var val C.gint
-			C.gst_structure_get_int(st, rawFieldName, &val)
+			var val C.gboolean
+			C.gst_structure_get_boolean(st, rawFieldName, &val)
 			vals[fieldName] = !(val == 0)
 		case C.G_TYPE_INT, C.G_TYPE_INT64: // We're assuming a 64-bit system here, because the GStreamer API doesn't make anything else easy
 			var val C.gint
@@ -72,6 +83,17 @@ func (m *Message) Content() (string, map[string]interface{}) {
 		case C.G_TYPE_STRING:
 			rawVal := C.gst_structure_get_string(st, rawFieldName)
 			vals[fieldName] = C.GoString((*C.char)(rawVal))
+		case gstTypeState:
+			var val C.gint
+			C.gst_structure_get_enum(st, rawFieldName, fieldType, &val)
+			vals[fieldName] = State(val)
+		case gstTypeElement:
+			val := C.gst_structure_get_value(st, rawFieldName)
+			ptr := C.g_value_peek_pointer(val)
+			raw := (*C.struct__GstElement)(unsafe.Pointer(ptr))
+			elem := newElement(raw)
+			elem.ref()
+			vals[fieldName] = elem
 		default:
 			vals[fieldName] = UnsupportedType(fieldType)
 		}

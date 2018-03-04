@@ -76,12 +76,31 @@ func LinkElements(src, dst *Element) error {
 	return nil
 }
 
+func (s State) String() string {
+	switch s {
+	case NullState:
+		return "null"
+	case ReadyState:
+		return "ready"
+	case PausedState:
+		return "paused"
+	case PlayingState:
+		return "playing"
+	default:
+		return "<unknown>"
+	}
+}
+
 func newElement(raw *C.struct__GstElement) *Element {
 	ret := &Element{
 		raw: raw,
 	}
 	runtime.SetFinalizer(ret, (*Element).unref)
 	return ret
+}
+
+func (e *Element) ref() {
+	C.gst_object_ref(gpointer(unsafe.Pointer(e.raw)))
 }
 
 func (e *Element) unref() {
