@@ -60,6 +60,10 @@ func (e *Element) SetProperty(name string, value interface{}) {
 	}
 }
 
+func (e *Element) PropertySpecs() PropertySpecs {
+	return objectProperties((*C.struct__GObject)(unsafe.Pointer(e.raw)))
+}
+
 func (e *Element) SetState(state State) (StateChangeResult, error) {
 	result := StateChangeResult(C.gst_element_set_state(e.raw, C.GstState(state)))
 	if result == StateChangeFailure {

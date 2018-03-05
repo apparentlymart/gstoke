@@ -83,11 +83,11 @@ func (m *Message) Content() (string, map[string]interface{}) {
 		case C.G_TYPE_STRING:
 			rawVal := C.gst_structure_get_string(st, rawFieldName)
 			vals[fieldName] = C.GoString((*C.char)(rawVal))
-		case gstTypeState:
+		case TypeState.raw():
 			var val C.gint
 			C.gst_structure_get_enum(st, rawFieldName, fieldType, &val)
 			vals[fieldName] = State(val)
-		case gstTypeElement:
+		case TypeElement.raw():
 			val := C.gst_structure_get_value(st, rawFieldName)
 			ptr := C.g_value_peek_pointer(val)
 			raw := (*C.struct__GstElement)(unsafe.Pointer(ptr))
